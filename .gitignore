@@ -1,0 +1,4 @@
+# Local notes / scratch (never committed)
+*.local
+.vscode/
+.idea/

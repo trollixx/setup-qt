@@ -1,0 +1,214 @@
+name: Setup Qt (qvm)
+description: >-
+  Install a Qt SDK version on Windows runners using qvm, with build caching.
+author: Oleg Shparber
+
+branding:
+  icon: package
+  color: green
+
+# Windows-only: qvm publishes win64 binaries (amd64 + arm64).
+# On Linux/macOS use distro packages or jurplel/install-qt-action instead.
+
+inputs:
+  version:
+    description: Qt version to install (e.g. "6.10.2").
+    required: true
+  modules:
+    description: >-
+      Add-on modules to install. Space- or comma-separated; the "qt" prefix is
+      optional (e.g. "qtcharts qtwebengine" or "charts,webengine").
+    required: false
+    default: ""
+  arch:
+    description: >-
+      Compiler/ABI target (e.g. "win64_msvc2022_64"). Auto-detected when empty.
+    required: false
+    default: ""
+  target:
+    description: 'Qt platform: desktop (default), android, ios, wasm.'
+    required: false
+    default: ""
+  docs:
+    description: Install documentation for the selected modules.
+    required: false
+    default: "false"
+  examples:
+    description: Install examples for the selected modules.
+    required: false
+    default: "false"
+  sources:
+    description: Install Qt source code.
+    required: false
+    default: "false"
+  debug-symbols:
+    description: Install debug symbol files.
+    required: false
+    default: "false"
+  dir:
+    description: >-
+      Qt install root. Defaults to a runner-temp location managed by the action.
+    required: false
+    default: ""
+  cache:
+    description: Cache the installed Qt SDK across runs.
+    required: false
+    default: "true"
+  cache-key-prefix:
+    description: Prefix for the cache key (bump to invalidate caches).
+    required: false
+    default: "qvm"
+  qvm-version:
+    description: >-
+      qvm release tag to download. Pinned for reproducibility; override to test
+      a newer qvm.
+    required: false
+    default: "v0.1.3"
+  set-env:
+    description: >-
+      Export CMAKE_PREFIX_PATH and Qt6_DIR, and prepend <prefix>\bin to PATH.
+    required: false
+    default: "true"
+
+outputs:
+  prefix:
+    description: Install directory of the requested Qt version.
+    value: ${{ steps.install.outputs.prefix }}
+  arch:
+    description: Resolved binary architecture (amd64/arm64) of the downloaded qvm.
+    value: ${{ steps.setup.outputs.arch }}
+  cache-hit:
+    description: "'true' when the Qt SDK was restored from cache."
+    value: ${{ steps.cache-restore.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve paths and cache key
+      id: setup
+      shell: pwsh
+      env:
+        IN_VERSION: ${{ inputs.version }}
+        IN_MODULES: ${{ inputs.modules }}
+        IN_ARCH: ${{ inputs.arch }}
+        IN_TARGET: ${{ inputs.target }}
+        IN_DOCS: ${{ inputs.docs }}
+        IN_EXAMPLES: ${{ inputs.examples }}
+        IN_SOURCES: ${{ inputs.sources }}
+        IN_DEBUG: ${{ inputs.debug-symbols }}
+        IN_DIR: ${{ inputs.dir }}
+        IN_PREFIX: ${{ inputs.cache-key-prefix }}
+        IN_QVM_VERSION: ${{ inputs.qvm-version }}
+      run: |
+        $ErrorActionPreference = 'Stop'
+        if ($env:RUNNER_OS -ne 'Windows') {
+          throw "setup-qt supports Windows runners only (got '$env:RUNNER_OS'). " +
+                "Use jurplel/install-qt-action on Linux/macOS."
+        }
+
+        $binArch = if ($env:RUNNER_ARCH -eq 'ARM64') { 'arm64' } else { 'amd64' }
+
+        # Single base dir holds the Qt tree (qt), the registry (state), and the
+        # download cache (dl). Only qt + state are cached; dl is ephemeral.
+        $base    = Join-Path $env:RUNNER_TEMP 'setup-qt'
+        $qtRoot  = if ($env:IN_DIR) { $env:IN_DIR } else { Join-Path $base 'Qt' }
+        $state   = Join-Path $base 'state'
+        $dl      = Join-Path $base 'dl'
+
+        # Normalize modules: split on whitespace/commas, drop blanks.
+        $modules = @($env:IN_MODULES -split '[,\s]+' | Where-Object { $_ })
+
+        # Cache key material: everything that changes the installed payload.
+        $extras = "docs=$($env:IN_DOCS);ex=$($env:IN_EXAMPLES);src=$($env:IN_SOURCES);dbg=$($env:IN_DEBUG)"
+        $modsSorted = ($modules | Sort-Object) -join ','
+        $material = "$($env:IN_VERSION)|$binArch|$($env:IN_ARCH)|$($env:IN_TARGET)|$modsSorted|$extras"
+        $bytes = [Text.Encoding]::UTF8.GetBytes($material)
+        $sha = [Security.Cryptography.SHA256]::Create().ComputeHash($bytes)
+        $hash = -join ($sha[0..7] | ForEach-Object { $_.ToString('x2') })
+        $key = "$($env:IN_PREFIX)-$($env:RUNNER_OS)-$binArch-qt$($env:IN_VERSION)-qvm$($env:IN_QVM_VERSION)-$hash"
+
+        # Surface state/cache dirs to every later qvm invocation (XDG vars are
+        # honored on Windows by qvm's path resolver).
+        "XDG_STATE_HOME=$state" >> $env:GITHUB_ENV
+        "XDG_CACHE_HOME=$dl"    >> $env:GITHUB_ENV
+
+        "arch=$binArch"                    >> $env:GITHUB_OUTPUT
+        "qt-root=$qtRoot"                  >> $env:GITHUB_OUTPUT
+        "modules=$($modules -join ',')"    >> $env:GITHUB_OUTPUT
+        "cache-key=$key"                   >> $env:GITHUB_OUTPUT
+        # Multiline output (two cache paths) requires heredoc form.
+        "cache-paths<<QVM_EOF"             >> $env:GITHUB_OUTPUT
+        "$qtRoot`n$state"                  >> $env:GITHUB_OUTPUT
+        "QVM_EOF"                          >> $env:GITHUB_OUTPUT
+        Write-Host "setup-qt: Qt root '$qtRoot', cache key '$key'"
+
+    - name: Restore Qt cache
+      id: cache-restore
+      if: inputs.cache == 'true'
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ steps.setup.outputs.cache-key }}
+        path: ${{ steps.setup.outputs.cache-paths }}
+
+    - name: Install Qt
+      id: install
+      shell: pwsh
+      env:
+        IN_VERSION: ${{ inputs.version }}
+        IN_ARCH: ${{ inputs.arch }}
+        IN_TARGET: ${{ inputs.target }}
+        IN_DOCS: ${{ inputs.docs }}
+        IN_EXAMPLES: ${{ inputs.examples }}
+        IN_SOURCES: ${{ inputs.sources }}
+        IN_DEBUG: ${{ inputs.debug-symbols }}
+        IN_QVM_VERSION: ${{ inputs.qvm-version }}
+        QT_ROOT: ${{ steps.setup.outputs.qt-root }}
+        BIN_ARCH: ${{ steps.setup.outputs.arch }}
+        MODULES: ${{ steps.setup.outputs.modules }}
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $qvm = Join-Path $env:RUNNER_TEMP "qvm-$($env:BIN_ARCH).exe"
+        $url = "https://github.com/trollixx/qvm/releases/download/$($env:IN_QVM_VERSION)/qvm-$($env:BIN_ARCH).exe"
+        Write-Host "setup-qt: downloading $url"
+        Invoke-WebRequest $url -OutFile $qvm
+
+        $iargs = @('install', $env:IN_VERSION, '--dir', $env:QT_ROOT)
+        if ($env:IN_ARCH)   { $iargs += @('--arch', $env:IN_ARCH) }
+        if ($env:IN_TARGET) { $iargs += @('--target', $env:IN_TARGET) }
+        if ($env:MODULES)   { $iargs += @('--modules', $env:MODULES) }
+        if ($env:IN_DOCS -eq 'true')     { $iargs += '--docs' }
+        if ($env:IN_EXAMPLES -eq 'true') { $iargs += '--examples' }
+        if ($env:IN_SOURCES -eq 'true')  { $iargs += '--sources' }
+        if ($env:IN_DEBUG -eq 'true')    { $iargs += '--debug-symbols' }
+
+        & $qvm @iargs
+        if ($LASTEXITCODE -ne 0) { throw "qvm install failed (exit $LASTEXITCODE)" }
+
+        $pargs = @('prefix', $env:IN_VERSION)
+        if ($env:IN_ARCH) { $pargs += @('--arch', $env:IN_ARCH) }
+        # Capture before truncating: piping a native command into Select-Object
+        # leaves $LASTEXITCODE unreliable.
+        $prefixOut = & $qvm @pargs
+        if ($LASTEXITCODE -ne 0) { throw "qvm prefix failed (exit $LASTEXITCODE)" }
+        $prefix = ($prefixOut | Select-Object -First 1).Trim()
+        if (-not $prefix) { throw "qvm prefix returned no path" }
+        Write-Host "setup-qt: Qt $($env:IN_VERSION) at $prefix"
+        "prefix=$prefix" >> $env:GITHUB_OUTPUT
+
+    - name: Export environment
+      if: inputs.set-env == 'true'
+      shell: pwsh
+      env:
+        PREFIX: ${{ steps.install.outputs.prefix }}
+      run: |
+        $ErrorActionPreference = 'Stop'
+        "CMAKE_PREFIX_PATH=$($env:PREFIX)" >> $env:GITHUB_ENV
+        "Qt6_DIR=$($env:PREFIX)"           >> $env:GITHUB_ENV
+        (Join-Path $env:PREFIX 'bin')      >> $env:GITHUB_PATH
+
+    - name: Save Qt cache
+      if: inputs.cache == 'true' && steps.cache-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ steps.setup.outputs.cache-key }}
+        path: ${{ steps.setup.outputs.cache-paths }}

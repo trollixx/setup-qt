@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-2022
+          - name: Windows arm64
+            os: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      # First install: a cache miss that downloads, installs, and saves.
+      - name: Install Qt (cold)
+        id: cold
+        uses: ./
+        with:
+          version: "6.8.3"
+          cache-key-prefix: ci-${{ github.run_id }}
+
+      - name: Assert install + env
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not $env:CMAKE_PREFIX_PATH) { throw "CMAKE_PREFIX_PATH not set" }
+          if (-not $env:Qt6_DIR) { throw "Qt6_DIR not set" }
+          if (-not (Test-Path $env:CMAKE_PREFIX_PATH)) { throw "prefix path missing: $env:CMAKE_PREFIX_PATH" }
+          $qmake = Get-Command qmake -ErrorAction Stop
+          Write-Host "qmake on PATH: $($qmake.Source)"
+          & qmake -query QT_VERSION
+          if ($LASTEXITCODE -ne 0) { throw "qmake failed" }
+          Write-Host "cold cache-hit = '${{ steps.cold.outputs.cache-hit }}', prefix = '${{ steps.cold.outputs.prefix }}'"
+
+      # Second install in the same run: should restore from the cache just saved.
+      - name: Install Qt (warm)
+        id: warm
+        uses: ./
+        with:
+          version: "6.8.3"
+          cache-key-prefix: ci-${{ github.run_id }}
+
+      - name: Assert cache hit
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $hit = '${{ steps.warm.outputs.cache-hit }}'
+          Write-Host "warm cache-hit = '$hit'"
+          if ($hit -ne 'true') { throw "expected warm run to restore from cache, got '$hit'" }
