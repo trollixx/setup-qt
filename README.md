@@ -15,7 +15,6 @@ This action is Windows-only because qvm publishes win64 binaries (amd64 + arm64)
   with:
     version: "6.10.2"
     modules: qtpositioning qtwebchannel qtwebengine
-    cache: true
 ```
 
 By default the action exports `CMAKE_PREFIX_PATH` and `Qt6_DIR`, and prepends the
