@@ -1,11 +1,11 @@
 # setup-qt
 
-A GitHub Action that installs a Qt SDK on **Windows** runners using
+A GitHub Action that installs a Qt SDK on **Windows and macOS** runners using
 [qvm](https://github.com/trollixx/qvm), with build caching.
 
-For Linux/macOS use distro packages or
-[`jurplel/install-qt-action`](https://github.com/jurplel/install-qt-action).
-This action is Windows-only because qvm publishes win64 binaries (amd64 + arm64).
+Linux is not supported — use distro packages instead (e.g. `apt qt6-*`).
+qvm fetches official Qt archives for an exact version, which Linux distros
+already provide and macOS/Windows do not.
 
 ## Usage
 

@@ -1,14 +1,14 @@
 name: Setup Qt (qvm)
 description: >-
-  Install a Qt SDK version on Windows runners using qvm, with build caching.
+  Install a Qt SDK version on Windows and macOS runners using qvm, with build caching.
 author: Oleg Shparber
 
 branding:
   icon: package
   color: green
 
-# Windows-only: qvm publishes win64 binaries (amd64 + arm64).
-# On Linux/macOS use distro packages or jurplel/install-qt-action instead.
+# Windows + macOS only: qvm publishes binaries for those platforms.
+# On Linux use distro packages (e.g. apt qt6-*) instead.
 
 inputs:
   version:
@@ -63,10 +63,10 @@ inputs:
       qvm release tag to download. Pinned for reproducibility; override to test
       a newer qvm.
     required: false
-    default: "v0.1.3"
+    default: "v0.2.0"
   set-env:
     description: >-
-      Export CMAKE_PREFIX_PATH and Qt6_DIR, and prepend <prefix>\bin to PATH.
+      Export CMAKE_PREFIX_PATH and Qt6_DIR, and prepend the Qt bin directory to PATH.
     required: false
     default: "true"
 
@@ -101,9 +101,13 @@ runs:
         IN_QVM_VERSION: ${{ inputs.qvm-version }}
       run: |
         $ErrorActionPreference = 'Stop'
-        if ($env:RUNNER_OS -ne 'Windows') {
-          throw "setup-qt supports Windows runners only (got '$env:RUNNER_OS'). " +
-                "Use jurplel/install-qt-action on Linux/macOS."
+        $osName = switch ($env:RUNNER_OS) {
+          'Windows' { 'windows' }
+          'macOS'   { 'macos' }
+          default {
+            throw "setup-qt supports Windows and macOS runners only (got '$env:RUNNER_OS'). " +
+                  "On Linux use distro packages (e.g. apt qt6-*)."
+          }
         }
 
         $binArch = if ($env:RUNNER_ARCH -eq 'ARM64') { 'arm64' } else { 'amd64' }
@@ -128,10 +132,11 @@ runs:
         $key = "$($env:IN_PREFIX)-$($env:RUNNER_OS)-$binArch-qt$($env:IN_VERSION)-qvm$($env:IN_QVM_VERSION)-$hash"
 
         # Surface state/cache dirs to every later qvm invocation (XDG vars are
-        # honored on Windows by qvm's path resolver).
+        # honored on Windows and macOS by qvm's path resolver).
         "XDG_STATE_HOME=$state" >> $env:GITHUB_ENV
         "XDG_CACHE_HOME=$dl"    >> $env:GITHUB_ENV
 
+        "os=$osName"                       >> $env:GITHUB_OUTPUT
         "arch=$binArch"                    >> $env:GITHUB_OUTPUT
         "qt-root=$qtRoot"                  >> $env:GITHUB_OUTPUT
         "modules=$($modules -join ',')"    >> $env:GITHUB_OUTPUT
@@ -163,14 +168,18 @@ runs:
         IN_DEBUG: ${{ inputs.debug-symbols }}
         IN_QVM_VERSION: ${{ inputs.qvm-version }}
         QT_ROOT: ${{ steps.setup.outputs.qt-root }}
+        OS_NAME: ${{ steps.setup.outputs.os }}
         BIN_ARCH: ${{ steps.setup.outputs.arch }}
         MODULES: ${{ steps.setup.outputs.modules }}
       run: |
         $ErrorActionPreference = 'Stop'
-        $qvm = Join-Path $env:RUNNER_TEMP "qvm-$($env:BIN_ARCH).exe"
-        $url = "https://github.com/trollixx/qvm/releases/download/$($env:IN_QVM_VERSION)/qvm-$($env:BIN_ARCH).exe"
+        $ext = if ($env:OS_NAME -eq 'windows') { '.exe' } else { '' }
+        $asset = "qvm-$($env:OS_NAME)-$($env:BIN_ARCH)$ext"
+        $qvm = Join-Path $env:RUNNER_TEMP $asset
+        $url = "https://github.com/trollixx/qvm/releases/download/$($env:IN_QVM_VERSION)/$asset"
         Write-Host "setup-qt: downloading $url"
         Invoke-WebRequest $url -OutFile $qvm
+        if ($env:OS_NAME -ne 'windows') { & chmod +x $qvm }
 
         $iargs = @('install', $env:IN_VERSION, '--dir', $env:QT_ROOT)
         if ($env:IN_ARCH)   { $iargs += @('--arch', $env:IN_ARCH) }

@@ -25,6 +25,8 @@ jobs:
             os: windows-2022
           - name: Windows arm64
             os: windows-11-arm
+          - name: macOS arm64
+            os: macos-15
     steps:
       - uses: actions/checkout@v4
 
