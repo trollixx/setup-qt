@@ -1,4 +1,4 @@
-name: Setup Qt (qvm)
+name: Setup Qt
 description: >-
   Install a Qt SDK version on Windows and macOS runners using qvm, with build caching.
 author: Oleg Shparber
