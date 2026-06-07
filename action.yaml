@@ -63,7 +63,7 @@ inputs:
       qvm release tag to download. Pinned for reproducibility; override to test
       a newer qvm.
     required: false
-    default: "v0.2.0"
+    default: "v0.3.0"
   set-env:
     description: >-
       Export CMAKE_PREFIX_PATH and prepend the Qt bin directory to PATH.

@@ -76,6 +76,10 @@ see what a given version offers. As of Qt 6.11:
 
 Modules marked `(TP)` are technical previews.
 
+Modules that the requested modules depend on are installed automatically. For
+example, `qthttpserver` pulls in `qtwebsockets`, and `qtquick3d` pulls in
+`qtshadertools` and `qtquicktimeline`.
+
 ## Outputs
 
 | Output | Description |
