@@ -43,7 +43,6 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           if (-not $env:CMAKE_PREFIX_PATH) { throw "CMAKE_PREFIX_PATH not set" }
-          if (-not $env:Qt6_DIR) { throw "Qt6_DIR not set" }
           if (-not (Test-Path $env:CMAKE_PREFIX_PATH)) { throw "prefix path missing: $env:CMAKE_PREFIX_PATH" }
           $qmake = Get-Command qmake -ErrorAction Stop
           Write-Host "qmake on PATH: $($qmake.Source)"

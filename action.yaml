@@ -66,7 +66,7 @@ inputs:
     default: "v0.2.0"
   set-env:
     description: >-
-      Export CMAKE_PREFIX_PATH and Qt6_DIR, and prepend the Qt bin directory to PATH.
+      Export CMAKE_PREFIX_PATH and prepend the Qt bin directory to PATH.
     required: false
     default: "true"
 
@@ -212,7 +212,6 @@ runs:
       run: |
         $ErrorActionPreference = 'Stop'
         "CMAKE_PREFIX_PATH=$($env:PREFIX)" >> $env:GITHUB_ENV
-        "Qt6_DIR=$($env:PREFIX)"           >> $env:GITHUB_ENV
         (Join-Path $env:PREFIX 'bin')      >> $env:GITHUB_PATH
 
     - name: Save Qt cache

@@ -21,9 +21,8 @@ specific version.
     modules: qtpositioning qtwebchannel qtwebengine
 ```
 
-By default the action exports `CMAKE_PREFIX_PATH` and `Qt6_DIR`, and prepends the
-Qt `bin` directory to `PATH`, so a later CMake configure finds Qt without extra
-setup:
+By default the action exports `CMAKE_PREFIX_PATH` and prepends the Qt `bin`
+directory to `PATH`, so a later CMake configure finds Qt without extra setup:
 
 ```yaml
 - uses: trollixx/setup-qt@v1
@@ -45,7 +44,7 @@ setup:
 | `cache` | `true` | Cache the installed Qt SDK across runs. |
 | `cache-key-prefix` | `qvm` | Cache key prefix (bump to invalidate caches). |
 | `qvm-version` | pinned | qvm release tag to download. |
-| `set-env` | `true` | Export `CMAKE_PREFIX_PATH`, `Qt6_DIR`, and update `PATH`. |
+| `set-env` | `true` | Export `CMAKE_PREFIX_PATH` and update `PATH`. |
 
 ## Modules
 
