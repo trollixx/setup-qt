@@ -55,25 +55,24 @@ see what a given version offers. As of Qt 6.11:
 
 | Module | Description | Module | Description |
 | --- | --- | --- | --- |
-| `qt3d` | Qt 3D | `qtpdf` | Qt PDF |
-| `qt5compat` | Qt 5 Compatibility | `qtpositioning` | Qt Positioning |
-| `qtactiveqt` | Active Qt | `qtquick3d` | Qt Quick 3D |
-| `qtcanvaspainter` | Qt Canvas Painter (TP) | `qtquick3dphysics` | Qt Quick 3D Physics |
-| `qtcharts` | Qt Charts | `qtquickeffectmaker` | Qt Quick Effect Maker |
-| `qtconnectivity` | Qt Connectivity | `qtquicktimeline` | Qt Quick Timeline |
-| `qtdatavis3d` | Qt Data Visualization | `qtremoteobjects` | Qt Remote Objects |
-| `qtgraphs` | Qt Graphs | `qtscxml` | Qt State Machines |
-| `qtgrpc` | Qt Protobuf and Qt GRPC | `qtsensors` | Qt Sensors |
-| `qthttpserver` | Qt HTTP Server | `qtserialbus` | Qt Serial Bus |
-| `qtimageformats` | Qt Image Formats | `qtserialport` | Qt Serial Port |
-| `qtlanguageserver` | Qt Language Server | `qtshadertools` | Qt Shader Tools |
-| `qtlocation` | Qt Location (TP) | `qtspeech` | Qt Speech |
-| `qtlottie` | Qt Lottie Animation | `qttasktree` | Qt Task Tree (TP) |
-| `qtmultimedia` | Qt Multimedia | `qtvirtualkeyboard` | Qt Virtual Keyboard |
-| `qtnetworkauth` | Qt Network Authorization | `qtwebchannel` | Qt WebChannel |
-| `qtopenapi` | Qt Open API (TP) | `qtwebengine` | Qt WebEngine |
-| `qtpdf` | Qt PDF | `qtwebsockets` | Qt WebSockets |
-| `qtpositioning` | Qt Positioning | `qtwebview` | Qt WebView |
+| `qt3d` | Qt 3D | `qtpositioning` | Qt Positioning |
+| `qt5compat` | Qt 5 Compatibility | `qtquick3d` | Qt Quick 3D |
+| `qtactiveqt` | Active Qt | `qtquick3dphysics` | Qt Quick 3D Physics |
+| `qtcanvaspainter` | Qt Canvas Painter (TP) | `qtquickeffectmaker` | Qt Quick Effect Maker |
+| `qtcharts` | Qt Charts | `qtquicktimeline` | Qt Quick Timeline |
+| `qtconnectivity` | Qt Connectivity | `qtremoteobjects` | Qt Remote Objects |
+| `qtdatavis3d` | Qt Data Visualization | `qtscxml` | Qt State Machines |
+| `qtgraphs` | Qt Graphs | `qtsensors` | Qt Sensors |
+| `qtgrpc` | Qt Protobuf and Qt GRPC | `qtserialbus` | Qt Serial Bus |
+| `qthttpserver` | Qt HTTP Server | `qtserialport` | Qt Serial Port |
+| `qtimageformats` | Qt Image Formats | `qtshadertools` | Qt Shader Tools |
+| `qtlanguageserver` | Qt Language Server | `qtspeech` | Qt Speech |
+| `qtlocation` | Qt Location (TP) | `qttasktree` | Qt Task Tree (TP) |
+| `qtlottie` | Qt Lottie Animation | `qtvirtualkeyboard` | Qt Virtual Keyboard |
+| `qtmultimedia` | Qt Multimedia | `qtwebchannel` | Qt WebChannel |
+| `qtnetworkauth` | Qt Network Authorization | `qtwebengine` | Qt WebEngine |
+| `qtopenapi` | Qt Open API (TP) | `qtwebsockets` | Qt WebSockets |
+| `qtpdf` | Qt PDF | `qtwebview` | Qt WebView |
 
 Modules marked `(TP)` are technical previews.
 
