@@ -150,7 +150,7 @@ runs:
     - name: Restore Qt cache
       id: cache-restore
       if: inputs.cache == 'true'
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v6
       with:
         key: ${{ steps.setup.outputs.cache-key }}
         path: ${{ steps.setup.outputs.cache-paths }}
@@ -216,7 +216,7 @@ runs:
 
     - name: Save Qt cache
       if: inputs.cache == 'true' && steps.cache-restore.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v6
       with:
         key: ${{ steps.setup.outputs.cache-key }}
         path: ${{ steps.setup.outputs.cache-paths }}
